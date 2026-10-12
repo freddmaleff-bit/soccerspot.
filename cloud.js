@@ -1,3 +1,4 @@
+// SOCCERSPOT FIX ADMIN v3 - corrige navigation Compte/Administration
 /* SoccerSpot v2 — comptes, avis publics, photos modérées et administration.
    Le contrôle d'accès véritable est dans supabase-setup.sql (RLS). */
 (function () {
@@ -47,13 +48,16 @@
     const avg=(list.reduce((sum,x)=>sum+x.stars,0)/list.length).toFixed(1).replace('.',',');
     return c.replace('<div class="card-foot">',`<p class="cloud-rating" aria-label="Moyenne des avis : ${avg} sur 5, ${list.length} avis">★ ${avg}/5 · ${list.length} avis</p><div class="card-foot">`);
   };
+  // Navigation : Compte toujours visible et Administration supplémentaire pour les admins.
   header = function () {
-    const title = state.user ? (state.admin ? 'Administration' : 'Mon compte') : 'Connexion';
-    const link = `<a class="header-link ${['compte','admin'].includes(S.page)?'active':''}" href="#${state.admin?'admin':'compte'}">${I('user','sm')} ${title}</a>`;
-    return oldHeader().replace('</nav></header>', link + '</nav></header>');
+    const accountLink = `<a class="header-link ${S.page==='compte'?'active':''}" href="#compte">${I('user','sm')} ${state.user?'Mon compte':'Connexion'}</a>`;
+    const adminLink = state.admin ? `<a class="header-link ${S.page==='admin'?'active':''}" href="#admin">${I('shield','sm')} Administration</a>` : '';
+    return oldHeader().replace('</nav></header>', accountLink + adminLink + '</nav></header>');
   };
   bottomNav = function () {
-    return oldBottom().replace('</nav>', `<a href="#${state.admin?'admin':'compte'}" class="nav-item ${['admin','compte'].includes(S.page)?'active':''}" style="text-decoration:none">${I('user')}<span>${state.admin?'Admin':'Compte'}</span></a></nav>`);
+    const accountLink = `<a href="#compte" class="nav-item ${S.page==='compte'?'active':''}" style="text-decoration:none">${I('user')}<span>Compte</span></a>`;
+    const adminLink = state.admin ? `<a href="#admin" class="nav-item ${S.page==='admin'?'active':''}" style="text-decoration:none">${I('shield')}<span>Admin</span></a>` : '';
+    return oldBottom().replace('</nav>', accountLink + adminLink + '</nav>');
   };
 
   function cloudNotice() {
@@ -177,6 +181,10 @@
       S.page=h; S.dialogId=null;S.filtersOpen=false;window.scrollTo(0,0);render();
     }else oldRoute();
   };
+  // La V1 avait inscrit oldRoute dans hashchange avant le chargement de cloud.js.
+  // Réaffecter route seul ne remplace pas ce gestionnaire: il faut le désinscrire.
+  window.removeEventListener('hashchange', oldRoute);
+  window.addEventListener('hashchange', route);
 
   const changed=(a,b)=>JSON.stringify(a)!==JSON.stringify(b);
   async function signedPhotos(){
@@ -353,7 +361,7 @@
     }catch(err){toast(message(err));}
   });
   // Redessin immédiat pour le bouton « Compte », puis synchronisation en ligne.
- window.removeEventListener('hashchange', oldRoute);
-window.addEventListener('hashchange', route);
-   route();start();
+  window.removeEventListener('hashchange', oldRoute);
+  window.addEventListener('hashchange', route);
+  route();start();
 })();
