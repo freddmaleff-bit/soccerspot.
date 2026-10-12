@@ -353,5 +353,7 @@
     }catch(err){toast(message(err));}
   });
   // Redessin immédiat pour le bouton « Compte », puis synchronisation en ligne.
-  route();start();
+ window.removeEventListener('hashchange', oldRoute);
+window.addEventListener('hashchange', route);
+   route();start();
 })();
