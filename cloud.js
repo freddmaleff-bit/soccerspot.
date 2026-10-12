@@ -1,4 +1,4 @@
-// SOCCERSPOT FIX ADMIN v3 - corrige navigation Compte/Administration
+// SOCCERSPOT COMPTE SECURITE v4 - corrige navigation Compte/Administration
 /* SoccerSpot v2 — comptes, avis publics, photos modérées et administration.
    Le contrôle d'accès véritable est dans supabase-setup.sql (RLS). */
 (function () {
@@ -81,7 +81,17 @@
     return `<section class="page-head"><div><span class="page-eyebrow">Session active</span><h1>Mon compte</h1><p>${text(state.user.email)}</p></div>${I('user','lg')}</section>
       <div class="form-card cloud-width"><div class="notice">${state.admin?'🛡️ Tu es administrateur de SoccerSpot.':'✅ Ton compte est connecté. Tu peux publier des avis et envoyer des photos.'}</div>
       ${state.admin?`<a class="primary-btn" href="#admin" style="text-decoration:none">Ouvrir l'administration</a>`:''}
-      ${button('refresh','Actualiser les données')} ${button('logout','Se déconnecter')}</div>${cloudNotice()}`;
+      <div class="form-row" style="margin-top:20px"><h2 style="font-size:19px;margin-bottom:8px">Sécurité du compte</h2><p class="form-help">Modifie ton mot de passe ou ferme ta session sur cet appareil.</p></div>
+      <form id="cloud-change-password-form" autocomplete="off" style="margin-top:16px">
+      <div class="form-row"><label for="cloud-current-password">Mot de passe actuel</label><input id="cloud-current-password" name="current" type="password" class="input" required autocomplete="current-password"></div>
+      <div class="form-row"><label for="cloud-new-password">Nouveau mot de passe (8 caractères minimum)</label><input id="cloud-new-password" name="password" type="password" class="input" minlength="8" required autocomplete="new-password"></div>
+      <div class="form-row"><label for="cloud-confirm-password">Confirmer le nouveau mot de passe</label><input id="cloud-confirm-password" name="confirm" type="password" class="input" minlength="8" required autocomplete="new-password"></div>
+      <button class="primary-btn" type="submit">Changer mon mot de passe</button></form>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:24px">${button('refresh','Actualiser')} ${button('logout','Fermer ma session')}</div>
+      <div class="notice warning" style="margin-top:24px"><h3 style="margin:0 0 8px">Supprimer mon compte</h3><p style="margin:0 0 12px">La suppression définitive comprend ton compte, tes avis et tes photos. Cette opération est irréversible et exige un service sécurisé qui n'est pas encore activé.</p>
+      <button class="outline-btn" type="button" disabled aria-disabled="true" title="Fonction non activée">Supprimer mon compte (à activer)</button>
+      <p class="form-help">Pour demander la suppression avant son activation, contacte l'administrateur de SoccerSpot. Ne publie pas de renseignements personnels dans les avis.</p></div>
+      </div>${cloudNotice()}`;
   }
 
   function reviewSection(p) {
@@ -354,6 +364,18 @@
     try{
       if(e.target.id==='cloud-auth-form'){e.preventDefault();await login(e);}
       else if(e.target.id==='cloud-reset-password-form'){e.preventDefault();if(!requireUser())return;const password=String(new FormData(e.target).get('password')||'');const result=await state.db.auth.updateUser({password});if(result.error)throw result.error;S.accountMode='login';toast('Mot de passe mis à jour!');render();}
+      else if(e.target.id==='cloud-change-password-form'){
+        e.preventDefault();if(!requireUser())return;
+        const form=e.target, f=new FormData(form), current=String(f.get('current')||''), next=String(f.get('password')||''), confirmPass=String(f.get('confirm')||'');
+        if(next.length<8){toast('Le nouveau mot de passe doit avoir au moins 8 caractères.');return;}
+        if(next!==confirmPass){toast('Les deux nouveaux mots de passe ne correspondent pas.');return;}
+        if(current===next){toast('Choisis un nouveau mot de passe différent.');return;}
+        const verify=await state.db.auth.signInWithPassword({email:state.user.email,password:current});
+        if(verify.error){toast('Mot de passe actuel incorrect.');return;}
+        const changed=await state.db.auth.updateUser({password:next});
+        if(changed.error){toast('Impossible de changer le mot de passe : '+message(changed.error));return;}
+        form.reset();toast('Ton mot de passe a été modifié!');await loadCloud();
+      }
       else if(e.target.id==='cloud-review-form'){e.preventDefault();await saveReview(e);}
       else if(e.target.id==='cloud-photo-form'){e.preventDefault();await uploadPhoto(e);}
       else if(e.target.id==='cloud-suggestion-form'){e.preventDefault();await submitSuggestion(e);}
