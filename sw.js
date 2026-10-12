@@ -1,30 +1,24 @@
-/* SoccerSpot PWA : cache de l'application, carte externe disponible en ligne uniquement. */
-const CACHE_NAME = 'soccerspot-install-v2';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)));
-  self.skipWaiting();
+/* SoccerSpot v2 : shell disponible après installation, données en ligne non mises en cache. */
+const CACHE_NAME='soccerspot-cloud-v4';
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./config.js','./cloud.js','./cloud.css'];
+self.addEventListener('install',event=>{
+ event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)));
+ self.skipWaiting();
 });
-self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys
-    .filter(key => key.startsWith('soccerspot-') && key !== CACHE_NAME)
-    .map(key => caches.delete(key)))));
-  self.clients.claim();
+self.addEventListener('activate',event=>{
+ event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('soccerspot-')&&k!==CACHE_NAME).map(k=>caches.delete(k)))));
+ self.clients.claim();
 });
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  const url = new URL(request.url);
-  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
-  event.respondWith(fetch(request).then(response => {
-    if (response.ok) {
-      const copy = response.clone();
-      event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, copy)));
-    }
-    return response;
-  }).catch(async () => {
-    const cached = await caches.match(request, {ignoreSearch: true});
-    if (cached) return cached;
-    if (request.mode === 'navigate') return (await caches.match('./index.html')) || Response.error();
-    return Response.error();
-  }));
+self.addEventListener('fetch',event=>{
+ const req=event.request,url=new URL(req.url);
+ if(req.method!=='GET'||url.origin!==self.location.origin)return;
+ event.respondWith(fetch(req).then(response=>{
+  if(response.ok)event.waitUntil(caches.open(CACHE_NAME).then(c=>c.put(req,response.clone())));
+  return response;
+ }).catch(async()=>{
+  const cached=await caches.match(req,{ignoreSearch:true});
+  if(cached)return cached;
+  if(req.mode==='navigate')return (await caches.match('./index.html'))||Response.error();
+  return Response.error();
+ }));
 });

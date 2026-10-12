@@ -34,6 +34,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="stylesheet" href="./cloud.css" />
 </head>
 <body>
   <div id="app" aria-live="off"></div>
@@ -42,7 +43,7 @@
 // Source officielle par terrain. null = inconnu, jamais "non" par défaut.
 // Dernière consultation des pages municipales: 12 octobre 2026.
 const UPDATED = '2026-10-12';
-const places = [
+const seedPlaces = [
  {id:'claude-beaulieu',name:'Centre sportif Claude-Beaulieu',city:'Saint-Jérôme',address:'725, rue Ouimet, Saint-Jérôme, Québec',lat:45.7854436,lng:-73.9839127,locationStatus:'Géocodage d’adresse',kind:'intérieur',surface:['synthétique'],formats:[],price:'gratuit',access:'plages',lighting:null,goals:true,restrooms:true,parking:null,hours:'Jeux libres : jeudi 16 h à 17 h 45 et samedi 13 h 45 à 15 h 15, du 10 septembre au 19 décembre 2026. Exceptions : 19 septembre et 17 octobre. Dès le 9 novembre : soccer libre le lundi et mercredi de 16 h 30 à 17 h 45 (jusqu’au 16 décembre).',notes:'1/3 du terrain en zone familiale et espace tir au but; 1/3 réservé au soccer libre, avec petits buts 5 contre 5. Respecter les plages et les réservations.',source:'https://www.vsj.ca/installations-sportives/centre-sportif-claude-beaulieu/',sourceName:'Ville de Saint-Jérôme',verified:['kind','surface','price','access','goals','restrooms','hours'],featured:true},
  {id:'parc-blainville',name:'Parc Blainville',city:'Blainville',address:'425, 22e Avenue Est, Blainville, Québec',lat:45.6566361,lng:-73.8493341,locationStatus:'Géocodage d’adresse',kind:'extérieur',surface:['naturel','synthétique'],formats:['7','11'],price:null,access:null,lighting:null,goals:null,restrooms:true,parking:null,hours:'Parc : 6 h à 23 h 30 (ne garantit pas que les terrains soient libres).',notes:'Terrains naturels et synthétiques de soccer à 7 et à 11. Toilettes saisonnières. La réservation et la pratique libre restent à confirmer.',source:'https://blainville.ca/fr/carte-interactive/blainville',sourceName:'Ville de Blainville',verified:['kind','surface','formats','restrooms','hours']},
  {id:'parc-equestre',name:'Parc équestre',city:'Blainville',address:'1025, chemin du Plan-Bouchard, Blainville, Québec',lat:45.6837221,lng:-73.87206,locationStatus:'Géocodage d’adresse',kind:'extérieur',surface:['synthétique'],formats:['7','11'],price:null,access:null,lighting:null,goals:null,restrooms:true,parking:null,hours:'Parc : 6 h à 23 h 30 (occupation des terrains non confirmée).',notes:'Terrains synthétiques à 7 et à 11, toilettes disponibles en été. Accès libre au soccer à vérifier.',source:'https://blainville.ca/carte-interactive/parc-equestre',sourceName:'Ville de Blainville',verified:['kind','surface','formats','restrooms','hours']},
@@ -57,6 +58,7 @@ const places = [
  {id:'parc-neuville',name:'Parc Neuville',city:'Sainte-Anne-des-Plaines',address:'172, rue Neuville-en-Ferrain, Sainte-Anne-des-Plaines, Québec',lat:45.7688092,lng:-73.8105747,locationStatus:'Lien cartographique officiel de la Ville',kind:'extérieur',surface:[],formats:[],price:null,access:null,lighting:null,goals:null,restrooms:null,parking:null,hours:null,notes:'Terrain de soccer, chalet et terrain de basketball recensés par la Ville. Les renseignements du terrain demeurent à vérifier.',source:'https://www.villesadp.ca/carte-interactive/parcs-et-espaces-verts/parcs/parc-neuville',sourceName:'Ville de Sainte-Anne-des-Plaines',verified:['kind']},
  {id:'terrebonne-soccer-libre',name:'Soccer libre · Complexes Sportifs Terrebonne',city:'Terrebonne',address:'Terrebonne, Québec (adresse de la séance à confirmer)',lat:null,lng:null,locationStatus:'Adresse à confirmer',kind:null,surface:[],formats:[],price:'payant',access:'non',lighting:null,goals:null,restrooms:null,parking:null,hours:'Séances sur réservation, horaires sur la billetterie en ligne.',notes:'Parties autogérées uniquement. Entraînement individuel interdit. Ne convient pas à une pratique seul avec son enfant. Tarif affiché sur la source : 12,50 $ par joueur, sous réserve de modification.',source:'https://complexessportifsterrebonne.com/activites-libres/soccer-libre/',sourceName:'Complexes Sportifs Terrebonne',verified:['price','access','hours']}
 ];
+let places = seedPlaces.slice();
 const known=(p,key)=>Boolean(p.verified.includes(key));
 function distanceKm(lat1,lng1,lat2,lng2){let r=Math.PI/180,dlat=(lat2-lat1)*r,dlon=(lng2-lng1)*r;let a=Math.sin(dlat/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dlon/2)**2;return 6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 
@@ -100,7 +102,7 @@ const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem('soccersp
 const store=(key,v)=>{try{localStorage.setItem('soccerspot:'+key,JSON.stringify(v));return true}catch{toast('Stockage plein ou indisponible sur cet appareil.');return false}};
 let favorites=read('favorites',[]), reviews=read('reviews',{}), submissions=read('submissions',[]), photos=read('photos',{});
 const S={page:'explorer',dialogId:null,search:'',city:'',kind:'',surface:'',cost:'',format:'',access:false,confirmed:false,onlyFav:false,view:'liste',sort:'pertinence',geo:null,filtersOpen:false,reviewStars:0,map:null,mapLayer:null,mapReady:false,localFilter:'tout'};
-const cities=[...new Set(places.map(p=>p.city))].sort((a,b)=>a.localeCompare(b,'fr-CA'));
+let cities=[...new Set(places.map(p=>p.city))].sort((a,b)=>a.localeCompare(b,'fr-CA'));
 const node=document.querySelector('#app');
 let toastTimer;
 function toast(s){const el=document.querySelector('#toast');el.textContent=s;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3200)}
@@ -177,6 +179,8 @@ window.addEventListener('hashchange',route);
 route();
 
   </script>
+  <script src="./config.js"></script>
+  <script src="./cloud.js"></script>
   <script>
     // Enregistrer la PWA pour permettre l'installation et un mode hors ligne de base.
     if ('serviceWorker' in navigator) {
