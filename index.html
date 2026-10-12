@@ -30,6 +30,10 @@
 
   </style>
   <title>SOCCERSPOT · Trouve ton terrain</title>
+  <!-- Installation Android : manifeste PWA et icônes locales -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
 </head>
 <body>
   <div id="app" aria-live="off"></div>
@@ -172,6 +176,15 @@ window.addEventListener('hashchange',route);
 
 route();
 
+  </script>
+  <script>
+    // Enregistrer la PWA pour permettre l'installation et un mode hors ligne de base.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js', {scope:'./'})
+          .catch(function(error){console.warn('SoccerSpot : service worker non enregistré', error);});
+      });
+    }
   </script>
 </body>
 </html>

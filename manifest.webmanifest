@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "SoccerSpot - Terrains de soccer du Québec",
+  "short_name": "SoccerSpot",
+  "description": "Répertoire des terrains de soccer du Québec : carte, photos, caractéristiques, filtres et favoris.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101b19",
+  "theme_color": "#101b19",
+  "lang": "fr-CA",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}
